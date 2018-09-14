@@ -13,11 +13,12 @@ public class encFS {
 		System.out.println("Hello World");
 		
 		EncFSModel model = new EncFSModel();
-		model.createStore("Test", "/home/thomas/Test/Encrypt", "/home/thomas/Test/Decrypt", false);
-		JTable tab = new JTable(model);
+		model.createStore("Test", "/home/thomas/Test/Encrypt", "/home/thomas/Test/Decrypt", false);		
+		JTable tab = new JTable(model);		
 		JFrame frame = new JFrame("TestFrame");
 		frame.getContentPane().add(tab);
 		frame.setVisible(true);
+		frame.pack();
 		frame.setDefaultCloseOperation(frame.EXIT_ON_CLOSE);
 		try
 		{
