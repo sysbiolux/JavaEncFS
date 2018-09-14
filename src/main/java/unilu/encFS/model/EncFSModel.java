@@ -1,4 +1,5 @@
 package unilu.encFS.model;
+import java.awt.Image;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -11,6 +12,7 @@ import java.io.Serializable;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -21,7 +23,10 @@ import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.SecretKeySpec;
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
 import javax.swing.JOptionPane;
+import javax.swing.table.DefaultTableModel;
 
 import unilu.encFS.exceptions.InvalidStoreName;
 import unilu.encFS.misc.RequestPasswordDialog;
@@ -29,59 +34,92 @@ import unilu.encFS.wrapper.encFS.CallEncFS;
 import unilu.encFS.wrapper.mounting.LinuxUnmounter;
 import unilu.encFS.wrapper.mounting.MacUnmounter;
 
-public class EncFSModel {
+public class EncFSModel extends DefaultTableModel{
 
 	private HashMap<String, EncFSProperties> storages;
 	private KeyStore key;
 	private boolean hasMasterKey;
 	private static String keyTest = "encFSMasterKey";
 	private String encodedKey = null;
-	private LinkedList<ModelUpdateListeners> listeners;		
-	private List<String> activeStores;
+	private LinkedList<String> stores;		
 	public static String encFSSaveFile = "encfs.props";
+	private DefaultTableModel tabModel;
+	private static final int COL_NAME = 0;
+	private static final int COL_ACTIVE = 1;
+	private static final int COL_PASS = 2;		
+	private Icon active;
+	private Icon inactive;
+	
 	public EncFSModel()
 	{
+		super(new String[]{"Name","Active","Password"},0);
+		tabModel = new DefaultTableModel(new String[]{"Name","Active","Password"},0);
 		storages = new HashMap<>();
-		listeners = new LinkedList<>();
+		stores = new LinkedList<>();
 		key = new KeyStore();
-		activeStores = new LinkedList<>();
+		inactive = new ImageIcon("inactive.png");
+		active = new ImageIcon("active.png");
+	}
+	
+	public List<String> getStoreNames()
+	{
+		LinkedList<String> storeNames = new LinkedList<String>(storages.keySet());
+		Collections.sort(storeNames);
+		return storeNames;
 	}
 
-	
-	public Collection<String> getStoreNames()
+	private boolean isActive(String storeName)
 	{
-		return storages.keySet();
-	}
-	
-	public Collection<String> getActiveStores()
+		return (boolean)tabModel.getValueAt(stores.indexOf(storeName), COL_ACTIVE);
+	}		
+	private void setActive(String storeName,boolean active)
 	{
-		return activeStores;
-	}
+		tabModel.setValueAt(active, stores.indexOf(storeName), 1);
 
-	public Collection<String> getInactiveStores()
-	{
-		LinkedList<String> inactives = new LinkedList<>();
-		inactives.addAll(storages.keySet());
-		inactives.removeAll(activeStores);
-		return inactives;
 	}
 	
-	private void fireModelChanged()
-	{
-		for(ModelUpdateListeners listener: listeners)
-		{
-			listener.modelUpdated();
-		}
-	}
 	private void addStorage(String Name, String EncryptedFolder, String DecryptedFolder)
 	{
 		EncFSProperties props = new EncFSProperties();
 		props.DecryptedFolder = DecryptedFolder;
 		props.EncryptedFolder = EncryptedFolder;
 		storages.put(Name, props);
-		fireModelChanged();
+		stores.add(Name);
+		tabModel.addRow(new Object[]{Name,false,false});
+	}
+	
+	private String getMasterKey()
+	{
+		String masterKey = key.getKey();
+		if(masterKey == null)
+		{
+
+			try{
+				while(!keyIsValid(masterKey))
+				{
+					masterKey = RequestPasswordDialog.requestPassword("Enter Master Key");
+					if(!keyIsValid(masterKey))
+					{
+						int opt = JOptionPane.showConfirmDialog(null, "Key Invalid, try again", "Invalid Key", JOptionPane.OK_CANCEL_OPTION);
+						if(opt == JOptionPane.CANCEL_OPTION)
+						{
+							throw new InvalidKeyException();
+						}
+					}
+				}
+				key.setKey(masterKey);												
+			}
+			catch(Exception e)
+			{
+				showErrorMessage(e);
+				return null;
+			}
+
+		}
+		return masterKey;
 	}
 
+	
 	public void createStore(String Name, String EncryptedFolder, String DecryptedFolder, boolean storePassword)
 	{
 		String password = RequestPasswordDialog.requestConfirmedPassword("Enter a password for the Encrypted Storage");
@@ -104,11 +142,13 @@ public class EncFSModel {
 	
 	public void removeStorage(String Name)
 	{	
-		if(activeStores.contains(Name))
+		if(isActive(Name))
 		{
 			lockStorage(Name);
 		}
-		storages.remove(Name);		
+		storages.remove(Name);
+		tabModel.removeRow(stores.indexOf(Name));
+		stores.remove(Name);		
 	}
 	
 	public void addPasswordToStore(String StoreName, String password) throws InvalidKeyException
@@ -138,6 +178,7 @@ public class EncFSModel {
 		try
 		{
 			storages.get(StoreName).password = encrypt(password, masterKey);
+			tabModel.setValueAt(true, stores.indexOf(StoreName), 2);
 		}
 		catch(Exception e)
 		{
@@ -159,7 +200,7 @@ public class EncFSModel {
 		{
 			EncFSProperties props = storages.get(storeName);
 			//check, whether its already active
-			if(activeStores.contains(storeName))
+			if(isActive(storeName))
 			{
 				//Nothing to do...
 				return;
@@ -213,8 +254,8 @@ public class EncFSModel {
 				showErrorMessage(e);
 				return;
 			}
-			activeStores.add(storeName);
-			fireModelChanged();
+			setActive(storeName, true);
+			//TODO: update model!
 			if(storePassword)
 			{
 				String masterKey = getMasterKey();
@@ -236,40 +277,9 @@ public class EncFSModel {
 	}	
 
 
-	private String getMasterKey()
+	public void lockStorage(String storeName)
 	{
-		String masterKey = key.getKey();
-		if(masterKey == null)
-		{
-
-			try{
-				while(!keyIsValid(masterKey))
-				{
-					masterKey = RequestPasswordDialog.requestPassword("Enter Master Key");
-					if(!keyIsValid(masterKey))
-					{
-						int opt = JOptionPane.showConfirmDialog(null, "Key Invalid, try again", "Invalid Key", JOptionPane.OK_CANCEL_OPTION);
-						if(opt == JOptionPane.CANCEL_OPTION)
-						{
-							throw new InvalidKeyException();
-						}
-					}
-				}
-				key.setKey(masterKey);												
-			}
-			catch(Exception e)
-			{
-				showErrorMessage(e);
-				return null;
-			}
-
-		}
-		return masterKey;
-	}
-
-	public void lockStorage(String StoreName)
-	{
-		if(!storages.containsKey(StoreName))
+		if(!storages.containsKey(storeName))
 		{
 			return;
 		}
@@ -279,15 +289,15 @@ public class EncFSModel {
 		{
 			if(os.startsWith("Linux"))
 			{
-				LinuxUnmounter.unmount(storages.get(StoreName).DecryptedFolder);		
+				LinuxUnmounter.unmount(storages.get(storeName).DecryptedFolder);		
 			}
 			else if(os.startsWith("mac") || os.startsWith("Mac"))
 			{
-				MacUnmounter.unmount(storages.get(StoreName).DecryptedFolder);
+				MacUnmounter.unmount(storages.get(storeName).DecryptedFolder);
 			}
-			activeStores.remove(StoreName);
-			fireModelChanged();
-		}
+			setActive(storeName, false);
+			//TODO: update model	
+			}
 		catch(IOException e)
 		{
 			showErrorMessage(e);
@@ -341,8 +351,7 @@ public class EncFSModel {
 				EncFSProperties props = (EncFSProperties)loader.next();
 				storages.put(storeName, props);
 			}
-					
-			fireModelChanged();
+			//TODO: Update model;
 		}
 		catch(IOException e)
 		{
@@ -384,6 +393,43 @@ public class EncFSModel {
 	private static void showErrorMessage(Exception e)
 	{
 		JOptionPane.showMessageDialog(null, "An internal error occurd:\n" + e.getMessage() ,e.getClass().getName(),JOptionPane.ERROR_MESSAGE);
+	}
+	
+	
+	@Override
+	public Object getValueAt(int row, int column) {
+		switch(column)
+		{
+			case COL_NAME:
+			{
+				String name = (String)tabModel.getValueAt(row, column);
+				EncFSProperties props = storages.get(name);
+				return name + "(" + props.DecryptedFolder + ")";
+			}
+			case COL_ACTIVE:
+			{
+				boolean act = (boolean) tabModel.getValueAt(row, column);
+				if(act)
+					return active;
+				else
+					return inactive;
+			}
+			case COL_PASS:
+			{
+				boolean act = (boolean) tabModel.getValueAt(row, column);
+				if(act)
+					return active;
+				else
+					return inactive;
+			}
+		}
+		return super.getValueAt(row, column);
+	}
+	
+	@Override
+	public int getColumnCount() {
+		// TODO Auto-generated method stub
+		return 3;
 	}
 
 }

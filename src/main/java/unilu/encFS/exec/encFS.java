@@ -1,30 +1,27 @@
 package unilu.encFS.exec;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
 
-import unilu.encFS.wrapper.encFS.CallEncFS;
+import javax.swing.JFrame;
+import javax.swing.JTable;
+
+import unilu.encFS.model.EncFSModel;
 
 public class encFS {
 
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 		System.out.println("Hello World");
-		CallEncFS caller = new CallEncFS();
+		
+		EncFSModel model = new EncFSModel();
+		model.createStore("Test", "/home/thomas/Test/Encrypt", "/home/thomas/Test/Decrypt", false);
+		JTable tab = new JTable(model);
+		JFrame frame = new JFrame("TestFrame");
+		frame.getContentPane().add(tab);
+		frame.setVisible(true);
+		frame.setDefaultCloseOperation(frame.EXIT_ON_CLOSE);
 		try
 		{
-			Process encFS = caller.startEncFSProcess("/home/thomas/Test/Encrypt", "/home/thomas/Test/Decrypt");		
-			caller.openExistingMount(encFS, "blubb");
-			BufferedReader br = new BufferedReader(new InputStreamReader(encFS.getInputStream()));
-			encFS.waitFor();
-			while(br.ready())
-			{
-				System.out.println(br.readLine());
-			}
-			if(!encFS.isAlive())
-			{
-				System.out.println("Process terminated with exit value: " + encFS.exitValue());
-			}
+			
 			
 		}
 		catch(Exception e)
