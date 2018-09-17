@@ -23,6 +23,7 @@ import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.SecretKeySpec;
+import javax.imageio.ImageIO;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JOptionPane;
@@ -49,26 +50,42 @@ public class EncFSModel implements TableModel, TableModelListener{
 	private List<TableModelListener> listeners;
 	public static String encFSSaveFile = "encfs.props";
 	private DefaultTableModel tabModel;
-	private static final int COL_NAME = 0;
-	private static final int COL_ACTIVE = 1;
-	private static final int COL_PASS = 2;		
+	public static final int COL_NAME = 0;
+	public static final int COL_ACTIVE = 1;
+	public static final int COL_PASS = 2;		
 	private Icon active;
 	private Icon inactive;
-	
+	private String testPassword = null; 
 	public EncFSModel()
-	{
+	{			
+		this(false);
+	}
+
+	public EncFSModel(boolean testing)
+	{	
 		tabModel = new DefaultTableModel(new String[]{"Name","Active","Password"},0);
 		tabModel.addTableModelListener(this);
 		storages = new HashMap<>();
 		stores = new LinkedList<>();
 		key = new KeyStore();
-		inactive = new ImageIcon("inactive.png");
-		active = new ImageIcon("active.png");
+		try{
+			inactive = new ImageIcon(ImageIO.read(getClass().getClassLoader().getResource("inactive.png")));
+			active = new ImageIcon(ImageIO.read(getClass().getClassLoader().getResource("active.png")));
+		}
+		catch(IOException e)
+		{
+			e.printStackTrace(System.out);
+		};
+
 		listeners = new LinkedList<TableModelListener>();
-		loadModel();
-		
+		loadModel();		
+		if (testing)
+		{
+			testPassword = "testtest";
+		}
+
 	}
-	
+
 	public List<String> getStoreNames()
 	{
 		LinkedList<String> storeNames = new LinkedList<String>(storages.keySet());
@@ -76,22 +93,34 @@ public class EncFSModel implements TableModel, TableModelListener{
 		return storeNames;
 	}
 
-	private boolean isActive(String storeName)
+	public boolean isActive(String storeName)
 	{
-		return (boolean)tabModel.getValueAt(stores.indexOf(storeName), COL_ACTIVE);
+		if(stores.indexOf(storeName) > 0)
+		{
+			return (boolean)tabModel.getValueAt(stores.indexOf(storeName), COL_ACTIVE);
+		}
+		else
+		{
+			return false;
+		}
 	}		
-	
+
 	private void setActive(String storeName,boolean active)
 	{
 		tabModel.setValueAt(active, stores.indexOf(storeName), COL_ACTIVE);
 	}
-	
-	
+
+
 	private void setPWPresent(String storeName, boolean present)
 	{
 		tabModel.setValueAt(present, stores.indexOf(storeName), COL_PASS);
 	}
 	
+	public boolean isPWSet(String storeName)
+	{				
+		return storages.get(storeName).password != null;
+	}
+
 	private void addStorage(String Name, String EncryptedFolder, String DecryptedFolder)
 	{
 		EncFSProperties props = new EncFSProperties();
@@ -102,7 +131,7 @@ public class EncFSModel implements TableModel, TableModelListener{
 		System.out.println("Adding store " + Name);
 		tabModel.addRow(new Object[]{Name,false,false});
 	}
-	
+
 	private String getMasterKey()
 	{
 		String masterKey = key.getKey();
@@ -112,7 +141,7 @@ public class EncFSModel implements TableModel, TableModelListener{
 			try{
 				while(!keyIsValid(masterKey))
 				{
-					masterKey = RequestPasswordDialog.requestPassword("Enter Master Key");
+					masterKey = RequestPasswordDialog.requestPassword("Enter Master Key", testPassword);
 					if(!keyIsValid(masterKey))
 					{
 						int opt = JOptionPane.showConfirmDialog(null, "Key Invalid, try again", "Invalid Key", JOptionPane.OK_CANCEL_OPTION);
@@ -134,7 +163,7 @@ public class EncFSModel implements TableModel, TableModelListener{
 		return masterKey;
 	}
 
-	
+
 	public void createStore(String Name, String EncryptedFolder, String DecryptedFolder, boolean storePassword)
 	{
 		EncFSProperties props = new EncFSProperties();
@@ -142,7 +171,7 @@ public class EncFSModel implements TableModel, TableModelListener{
 		props.DecryptedFolder = DecryptedFolder;
 		unlockStorage(Name,props,storePassword);
 	}
-	
+
 	public void removeStorage(String Name)
 	{	
 		if(isActive(Name))
@@ -153,13 +182,13 @@ public class EncFSModel implements TableModel, TableModelListener{
 		tabModel.removeRow(stores.indexOf(Name));
 		stores.remove(Name);		
 	}
-	
+
 	public void addPasswordToStore(String StoreName, String password) throws InvalidKeyException
 	{		
 		if(!hasMasterKey)
 		{
 			//Request a non empty key to be added to the
-			String masterPass = RequestPasswordDialog.requestConfirmedPassword("A Masterkey is required to store passwords");
+			String masterPass = RequestPasswordDialog.requestConfirmedPassword("A Masterkey is required to store passwords", testPassword);
 			if(masterPass != null)
 			{
 				key.setKey(masterPass);		
@@ -190,12 +219,12 @@ public class EncFSModel implements TableModel, TableModelListener{
 
 	}
 
-	
+
 	public void unlockStorage(String storeName) throws InvalidStoreName
 	{
 		unlockStorage(storeName,null, false);
 	}
-	
+
 	public void unlockStorage(String storeName, EncFSProperties encFSProps, boolean storePassword)
 	{
 		String password;
@@ -203,21 +232,28 @@ public class EncFSModel implements TableModel, TableModelListener{
 		if(encFSProps == null)
 		{				
 			encFSProps = storages.get(storeName);
+			System.out.println("Props for Store " + storeName + " are " + encFSProps);
+			
 		}
 		if(stores.contains(storeName))
 		{	//check, whether its already active
+			System.out.println("Found Storage with Name " + storeName + "\nTrying to open");
 			if(isActive(storeName))
 			{
 				//Nothing to do...
 				return;
 			}
-				//Test, whether this is a new storage or an existing one.
+			//Test, whether this is a new storage or an existing one.
 			try
 			{
 				Process encFS = CallEncFS.startEncFSProcess(encFSProps.EncryptedFolder, encFSProps.DecryptedFolder);
-				int openType = CallEncFS.getEncFSStatus(encFS);												
-				//If it is a new one, we request a confirmed password.
+				int openType = CallEncFS.getEncFSStatus(encFS);
+				//Since it is stored, we just open it.
 				password = openExistingVolume(encFS, encFSProps);
+				if(password == null)
+				{
+					throw new InvalidKeyException("No Key provided");
+				}
 			}
 			catch(Exception e)
 			{
@@ -230,49 +266,50 @@ public class EncFSModel implements TableModel, TableModelListener{
 			//This is not yet a store!
 			//So it might be an existing store on the hard drive. 
 			//We will test this and add it accordingly.
+			System.out.println("Generating New Store with name" + storeName);
 			try{
-			Process encFS = CallEncFS.startEncFSProcess(encFSProps.EncryptedFolder, encFSProps.DecryptedFolder);
-			int openType = CallEncFS.getEncFSStatus(encFS);								
+				Process encFS = CallEncFS.startEncFSProcess(encFSProps.EncryptedFolder, encFSProps.DecryptedFolder);
+				int openType = CallEncFS.getEncFSStatus(encFS);								
 
-			if(openType == CallEncFS.NEWMOUNT)
-			{				
-				password = RequestPasswordDialog.requestConfirmedPassword("Please select a password for the storage. (Minimum length 8)");
-				while(password != null && password.length() < 8)
-				{
-					password = RequestPasswordDialog.requestConfirmedPassword("The password must have at least a legth fo 8.\nPlease select a password for the storage");	
-				}
-				if(password != null)
-				{
-					//IF we got a password, 
-					CallEncFS.generateNewMount(encFS, password);
+				if(openType == CallEncFS.NEWMOUNT)
+				{				
+					password = RequestPasswordDialog.requestConfirmedPassword("Please select a password for the storage. (Minimum length 8)", testPassword);
+					while(password != null && password.length() < 8)
+					{
+						password = RequestPasswordDialog.requestConfirmedPassword("The password must have at least a legth fo 8.\nPlease select a password for the storage", testPassword);	
+					}
+					if(password != null)
+					{
+						//IF we got a password, 
+						CallEncFS.generateNewMount(encFS, password);
+					}
+					else
+					{
+						encFS.destroy();
+						return;
+					}
 				}
 				else
 				{
-					encFS.destroy();
-					return;
+					try
+					{
+						//If it is a new one, we request a confirmed password.
+						password = openExistingVolume(encFS, encFSProps);
+					}
+					catch(Exception e)
+					{
+						showErrorMessage(e);
+						return;
+					}
 				}
-			}
-			else
-			{
-				try
-				{
-				//If it is a new one, we request a confirmed password.
-					password = openExistingVolume(encFS, encFSProps);
-				}
-				catch(Exception e)
-				{
-					showErrorMessage(e);
-					return;
-				}
-			}
 			}
 			catch(Exception e)
-			{
+			{				
 				showErrorMessage(e);
 				return;
 			}
 			addStorage(storeName, encFSProps.EncryptedFolder, encFSProps.DecryptedFolder);
-			
+
 		}
 		setActive(storeName, true);		
 		if(storePassword)
@@ -312,12 +349,12 @@ public class EncFSModel implements TableModel, TableModelListener{
 			}
 			setActive(storeName, false);
 			//TODO: update model	
-			}
+		}
 		catch(IOException e)
 		{
 			showErrorMessage(e);
 		}
-		
+
 	}
 
 	public void saveModel()
@@ -346,7 +383,7 @@ public class EncFSModel implements TableModel, TableModelListener{
 		{
 			showErrorMessage(e);
 		}		
-		
+
 	}
 
 	public void loadModel()
@@ -356,44 +393,46 @@ public class EncFSModel implements TableModel, TableModelListener{
 		File encFSConfig = new File(userfolder + File.separator + "encFS" + File.separator + encFSSaveFile);
 		if(encFSConfig.exists())
 		{
-		try{
-			ObjectInputStream ois = new ObjectInputStream(new FileInputStream(encFSConfig));			
-			List<Serializable> inputObjects = (List<Serializable>)ois.readObject();			
-			Iterator<Serializable> loader = inputObjects.iterator();
-			encodedKey = (String)loader.next();
-			while(loader.hasNext())
-			{
-				String storeName = (String)loader.next();
-				EncFSProperties props = (EncFSProperties)loader.next();								
-				storages.put(storeName, props);
-				stores.add(storeName);
-				
+			try{
+				ObjectInputStream ois = new ObjectInputStream(new FileInputStream(encFSConfig));			
+				List<Serializable> inputObjects = (List<Serializable>)ois.readObject();			
+				Iterator<Serializable> loader = inputObjects.iterator();
+				encodedKey = (String)loader.next();
+				while(loader.hasNext())
+				{
+					String storeName = (String)loader.next();
+					EncFSProperties props = (EncFSProperties)loader.next();
+					System.out.println("Loading Properties for " + storeName + ":" );
+					System.out.println(props);
+					storages.put(storeName, props);
+					stores.add(storeName);
+
+				}
+				for(String store : stores)
+				{
+					Object[] rowData = new Object[3];
+					rowData[0] = store;
+					rowData[1] = false;
+					rowData[2] = storages.get(store).password != null;
+					tabModel.addRow(rowData);
+				}
+				//TODO: Update model;
 			}
-			for(String store : stores)
+			catch(IOException e)
 			{
-				Object[] rowData = new Object[3];
-				rowData[0] = store;
-				rowData[1] = false;
-				rowData[2] = storages.get(store).password != null;
-				tabModel.addRow(rowData);
+				showErrorMessage(e);
+			}		
+			catch(ClassNotFoundException e)
+			{
+				showErrorMessage(e);
 			}
-			//TODO: Update model;
-		}
-		catch(IOException e)
-		{
-			showErrorMessage(e);
-		}		
-		catch(ClassNotFoundException e)
-		{
-			showErrorMessage(e);
-		}
 		}
 	}
 
 	private String openExistingVolume(Process encFS, EncFSProperties encFSProps) throws IOException,InterruptedException,NonEmptyFolderException
 	{
-		
-		String password = RequestPasswordDialog.requestPassword("Please enter the Password for the storage");
+
+		String password = RequestPasswordDialog.requestPassword("Please enter the Password for the storage", testPassword);
 		if(password == null)
 		{
 			return password;
@@ -403,7 +442,7 @@ public class EncFSModel implements TableModel, TableModelListener{
 		//regular exit
 		while(encFS.exitValue() != 0)
 		{						
-			password = RequestPasswordDialog.requestPassword("Password Invalid, Please enter the Password for the storage");
+			password = RequestPasswordDialog.requestPassword("Password Invalid, Please enter the Password for the storage", testPassword);
 			if(password == null)
 			{
 				encFS.destroy();
@@ -421,7 +460,7 @@ public class EncFSModel implements TableModel, TableModelListener{
 		}			
 		return password;
 	}
-	
+
 	private boolean keyIsValid(String key) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException
 	{		
 		String decryptedValidator = decrypt(encodedKey, key);
@@ -448,39 +487,40 @@ public class EncFSModel implements TableModel, TableModelListener{
 		return decrypted;
 	}
 
-	private static void showErrorMessage(Exception e)
+	public static void showErrorMessage(Exception e)
 	{
 		JOptionPane.showMessageDialog(null, "An internal error occurd:\n" + e.getMessage() ,e.getClass().getName(),JOptionPane.ERROR_MESSAGE);
+		e.printStackTrace(System.out);
 	}
-	
-	
+
+
 	@Override
 	public Object getValueAt(int row, int column) {
-		System.out.println("Requesting value at " + row + "/" + column);
+		//System.out.println("Requesting value at " + row + "/" + column);
 		switch(column)
 		{
-			case COL_NAME:
-			{
-				String name = (String)tabModel.getValueAt(row, column);
-				EncFSProperties props = storages.get(name);
-				return name + "(" + props.DecryptedFolder + ")";
-			}
-			case COL_ACTIVE:
-			{
-				boolean act = (boolean) tabModel.getValueAt(row, column);
-				if(act)
-					return active;
-				else
-					return inactive;
-			}
-			case COL_PASS:
-			{
-				boolean act = (boolean) tabModel.getValueAt(row, column);
-				if(act)
-					return active;
-				else
-					return inactive;
-			}
+		case COL_NAME:
+		{
+			String name = (String)tabModel.getValueAt(row, column);
+			EncFSProperties props = storages.get(name);
+			return name + "(" + props.DecryptedFolder + ")";
+		}
+		case COL_ACTIVE:
+		{
+			boolean act = (boolean) tabModel.getValueAt(row, column);
+			if(act)
+				return active;
+			else
+				return inactive;
+		}
+		case COL_PASS:
+		{
+			boolean act = (boolean) tabModel.getValueAt(row, column);
+			if(act)
+				return active;
+			else
+				return inactive;
+		}
 		}
 		return tabModel.getValueAt(row, column);
 	}
@@ -504,8 +544,15 @@ public class EncFSModel implements TableModel, TableModelListener{
 	}
 
 	@Override
-	public Class<?> getColumnClass(int columnIndex) {		
-		return tabModel.getColumnClass(columnIndex);
+	public Class<?> getColumnClass(int columnIndex) {
+		if(getRowCount() == 0)
+		{
+			return tabModel.getColumnClass(columnIndex);
+		}
+		else
+		{
+			return  getValueAt(0, columnIndex).getClass();
+		}		
 	}
 
 	@Override
@@ -541,5 +588,13 @@ public class EncFSModel implements TableModel, TableModelListener{
 			l.tableChanged(newE);
 		}
 	}	
-
+	/**
+	 * Get the store name at a particular position, for use with the table.
+	 * @param row
+	 * @return
+	 */
+	public String getStoreNameAt(int row)
+	{
+		return (String)tabModel.getValueAt(row, 0);
+	}
 }

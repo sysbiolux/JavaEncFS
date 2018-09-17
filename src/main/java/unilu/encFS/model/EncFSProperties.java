@@ -7,9 +7,9 @@ public class EncFSProperties implements Serializable {
 	 * 
 	 */
 	private static final long serialVersionUID = 10001;
-	
-	String password;
-	String EncryptedFolder;
-	String DecryptedFolder;
+	public String storeName;
+	public String password;
+	public String EncryptedFolder;
+	public String DecryptedFolder;
 	
 }

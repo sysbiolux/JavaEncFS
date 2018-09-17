@@ -6,6 +6,19 @@ import javax.swing.JPasswordField;
 
 public class RequestPasswordDialog {
 
+	
+	public static String requestConfirmedPassword(String title, String password)
+	{
+		if(password == null)
+		{
+			return requestConfirmedPassword(title);
+		}
+		else
+		{
+			return password;
+		}
+	}
+	
 	public static String requestConfirmedPassword(String title)
 	{
 		boolean passmatch = false;
@@ -24,8 +37,8 @@ public class RequestPasswordDialog {
 		while(!passmatch)
 		{
 			int option = JOptionPane.showOptionDialog(null, panel, title,
-					JOptionPane.NO_OPTION, JOptionPane.PLAIN_MESSAGE,
-					null, options, options[1]);
+					JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE,
+					null, options, options[0]);
 			if(option == 0) // pressing OK button
 			{
 				password = new String(pass.getPassword());
@@ -47,6 +60,18 @@ public class RequestPasswordDialog {
 		return password;
 	}
 	
+	public static String requestPassword(String title, String password)
+	{
+		if(password == null)
+		{
+			return requestPassword(title);
+		}
+		else
+		{
+			return password;
+		}
+	}
+	
 	public static String requestPassword(String title)
 	{
 		String password = null;		
@@ -57,8 +82,8 @@ public class RequestPasswordDialog {
 		panel.add(pass);
 		String[] options = new String[]{"OK", "Cancel"};
 		int option = JOptionPane.showOptionDialog(null, panel, title,
-					JOptionPane.NO_OPTION, JOptionPane.PLAIN_MESSAGE,
-					null, options, options[1]);
+					JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE,
+					null, options, options[0]);
 		if(option == 0) // pressing OK button
 		{
 			password = new String(pass.getPassword());

@@ -8,11 +8,10 @@ import java.io.OutputStreamWriter;
 import javax.swing.JOptionPane;
 
 import unilu.encFS.exceptions.NonEmptyFolderException;
-import unilu.encFS.misc.RequestPasswordDialog;
 
 public class CallEncFS {		
 
-	public static int OPENMOUNT = 1;
+	public static int OPENMOUNT = 0;
 	public static int NEWMOUNT = 1;
 	
 	
@@ -45,7 +44,7 @@ public class CallEncFS {
 			}
 			else
 			{
-				ProcessBuilder pb = new ProcessBuilder("encfs", encryptedFolder, DecryptedFolder);
+				ProcessBuilder pb = new ProcessBuilder("encfs", "-S", encryptedFolder, DecryptedFolder);
 				pb.redirectErrorStream(true);
 				return pb.start();	
 			}
@@ -54,68 +53,72 @@ public class CallEncFS {
 	
 	public static int getEncFSStatus(Process encFSProcess) throws IOException
 	{
-		//This function assumes, that the encFS process is started, but nothing is yet read from the process (as it could otherwise block.
+		//This function assumes, that the encFS process is started, but nothing is yet read from the process (as it could otherwise block.		
 		BufferedReader br = new BufferedReader(new InputStreamReader(encFSProcess.getInputStream()));
-		String currentLine = br.readLine();
-		if(currentLine.startsWith("Creating"))
+		if(br.ready())
 		{
-			return NEWMOUNT;
+			String currentLine = br.readLine();
+			if(currentLine.startsWith("Creating"))
+			{
+				return NEWMOUNT;
+			}
+			else
+			{
+				return OPENMOUNT;
+			}
 		}
 		else
 		{
 			return OPENMOUNT;
-		}		
+		}
 	}
 	
-	public static void openExistingMount(Process encFSProcess, String password) throws IOException
+	public static void openExistingMount(Process encFSProcess, String password) throws IOException, InterruptedException
 	{
 		BufferedReader br = new BufferedReader(new InputStreamReader(encFSProcess.getInputStream()));
 		OutputStreamWriter osw = new OutputStreamWriter(encFSProcess.getOutputStream());
-		String currentLine;
+		String temp = null;
 		while(br.ready())
 		{
-			currentLine = br.readLine();
-			System.out.println(currentLine);
+			temp = br.readLine();
 		}		
 		osw.write(password);				
 		osw.write("\n");
-		osw.flush();											
+		osw.flush();	
+		encFSProcess.waitFor();
+		if(br.ready()) //This indicates an issue, as it normall exits without issue.			
+		{
+			temp = br.readLine();
+			System.out.println(temp);
+		}
 	}
 	
 	
-	public static void generateNewMount(Process encFSProcess, String password) throws IOException
+	public static void generateNewMount(Process encFSProcess, String password) throws IOException, InterruptedException
 	{				
 		BufferedReader br = new BufferedReader(new InputStreamReader(encFSProcess.getInputStream()));
 		OutputStreamWriter osw = new OutputStreamWriter(encFSProcess.getOutputStream());
-		String currentLine;		
 		while(br.ready())
 		{
-			currentLine = br.readLine();
-			System.out.println(currentLine);
+			br.readLine();
+			//System.out.println(currentLine);
 		}
 		osw.write("\n");
-		osw.flush();					
+		osw.flush();
 		while(br.ready())
 		{				
-			int currentChar = br.read(); 
-			System.out.print((char)currentChar);											
-		}
-		osw.write(password);				
-		osw.write("\n");
-		osw.flush();						
-		while(br.ready())
-		{				
-			int currentChar = br.read(); 
-			System.out.print((char)currentChar);											
-		}
+			br.read(); 
+			//System.out.print((char)currentChar);											
+		}		
 		osw.write(password);				
 		osw.write("\n");
 		osw.flush();
 		while(br.ready())
 		{				
-			int currentChar = br.read(); 
-			System.out.print((char)currentChar);											
+			br.read(); 
+			//System.out.print((char)currentChar);											
 		}		
+		encFSProcess.waitFor();
 	}
 
 }
