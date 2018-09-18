@@ -29,7 +29,7 @@ public class encFSIOReader implements Runnable
 				
 				if(br.ready())
 				{
-					System.out.print((char)currentline);
+					//System.out.print((char)currentline);
 					currentline = br.read();
 					Request = Request + "\n" + (char)currentline;					
 				}	

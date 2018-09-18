@@ -1,6 +1,4 @@
 package unilu.encFS.model;
-import java.nio.charset.Charset;
-import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 public class KeyStore implements Runnable {
@@ -25,12 +23,6 @@ public class KeyStore implements Runnable {
 		}
 	}
 
-	private String createSalt()
-	{
-		byte[] array = new byte[12];
-		new Random().nextBytes(array);
-		return new String(array, Charset.forName("UTF-8"));
-	}
 	
 	public String getKey()
 	{

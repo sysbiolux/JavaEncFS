@@ -4,20 +4,19 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
-import java.nio.channels.ShutdownChannelGroupException;
 import java.util.LinkedList;
 import java.util.List;
 
+import javax.swing.JOptionPane;
+
 import unilu.encFS.CreateNewModelGUI;
 import unilu.encFS.EncFSMenu;
-import unilu.encFS.misc.RequestPasswordDialog;
 import unilu.encFS.model.EncFSModel;
 import unilu.encFS.model.EncFSProperties;
 
 public class EncFSController implements ActionListener ,ComponentListener{
 
 	private EncFSModel model;
-	private String currentMenu = null;
 	private List<String> commands;
 	private EncFSMenu trayMenu;
 	public EncFSController(EncFSModel model)
@@ -26,7 +25,8 @@ public class EncFSController implements ActionListener ,ComponentListener{
 		commands = new LinkedList<>();
 		commands.add(EncFSCommand.MOUNT_COMMAND);
 		commands.add(EncFSCommand.PWADD_COMMAND);
-		commands.add(EncFSCommand.UNMOUNT_COMMAND);		
+		commands.add(EncFSCommand.UNMOUNT_COMMAND);
+		commands.add(EncFSCommand.REMOVE_COMMAND);
 	}
 
 	public void setTrayMenu(EncFSMenu menu)
@@ -38,10 +38,9 @@ public class EncFSController implements ActionListener ,ComponentListener{
 	public void actionPerformed(ActionEvent e) {
 		// TODO Auto-generated method stub
 		String command = e.getActionCommand();
-		System.out.println(command);
 		if(command.equals(EncFSCommand.EXIT_COMMAND))
 		{
-			model.saveModel();
+			model.shutDown();			
 			//Exit was called, so we close.
 			System.exit(0);
 		}		
@@ -81,7 +80,6 @@ public class EncFSController implements ActionListener ,ComponentListener{
 				{
 					try
 					{
-						System.out.println("Trying to close storage" + storage);
 						model.lockStorage(storage);
 						trayMenu.buildMenu();
 						currentMenu = null;
@@ -96,12 +94,23 @@ public class EncFSController implements ActionListener ,ComponentListener{
 				{
 					try
 					{
-						if(model.isActive(storage))
-						{
-							throw new IllegalStateException("Cannot add password to an open storage.");
-						}
 						model.unlockStorage(storage, null, true);
 						trayMenu.buildMenu();
+						currentMenu = null;
+					}
+					catch(Exception ex)
+					{
+						EncFSModel.showErrorMessage(ex);
+					}
+					break;
+				}
+				case EncFSCommand.REMOVE_COMMAND:
+				{
+					try
+					{
+						JOptionPane.showMessageDialog(null, "This will NOT remove any files from your system\nIf you want to delete the files, you will have to manually delete them.!");
+						model.lockStorage(storage);
+						model.removeStorage(storage);
 						currentMenu = null;
 					}
 					catch(Exception ex)

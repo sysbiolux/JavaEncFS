@@ -18,13 +18,14 @@ import unilu.encFS.commands.EncFSCommand;
 import unilu.encFS.commands.EncFSController;
 import unilu.encFS.model.EncFSModel;
 
-public class EncFSGUI extends JFrame implements ListSelectionListener{
+public class EncFSGUI extends JFrame implements ListSelectionListener, TableModelListener{
 	EncFSModel model;
 	EncFSController controller;
 	JTable volumeTable;
 	SelectionButton mountButton;
 	SelectionButton pwButton;
 	SelectionButton closeButton;
+	SelectionButton removeButton;
 
 	public EncFSGUI(EncFSModel model, EncFSController controller)
 	{
@@ -35,6 +36,13 @@ public class EncFSGUI extends JFrame implements ListSelectionListener{
 		volumeTable.setRowSelectionAllowed(true);
 		volumeTable.setColumnSelectionAllowed(false);
 		volumeTable.getSelectionModel().addListSelectionListener(this);
+		volumeTable.getColumnModel().getColumn(0).setMinWidth(200);
+		volumeTable.getColumnModel().getColumn(1).setMinWidth(80);
+		volumeTable.getColumnModel().getColumn(2).setMinWidth(80);
+		volumeTable.getColumnModel().getColumn(1).setMaxWidth(80);
+		volumeTable.getColumnModel().getColumn(2).setMaxWidth(80);
+		volumeTable.setMinimumSize(new Dimension(360, 80));		
+		model.addTableModelListener(volumeTable);
 		Container contentPane = this.getContentPane();
 		this.getContentPane().setLayout(new GridBagLayout());
 		GridBagConstraints gbc = new GridBagConstraints();
@@ -45,8 +53,9 @@ public class EncFSGUI extends JFrame implements ListSelectionListener{
 		gbc.weighty = 5;
 		contentPane.add(setupScrollPane(volumeTable), gbc);
 		
-		gbc.fill = GridBagConstraints.NONE;
+		//gbc.fill = GridBagConstraints.NONE;
 		gbc.weighty = 0.5;
+		gbc.weightx = 1;
 		gbc.gridy = 1;
 		gbc.gridwidth = 1;
 		mountButton = new SelectionButton(EncFSCommand.MOUNT_COMMAND);
@@ -68,17 +77,24 @@ public class EncFSGUI extends JFrame implements ListSelectionListener{
 		closeButton = new SelectionButton(EncFSCommand.UNMOUNT_COMMAND);
 		closeButton.addActionListener(controller);				
 		closeButton.setEnabled(false);
-		contentPane.add(closeButton,gbc);		
+		contentPane.add(closeButton,gbc);
+		
+		gbc.gridx = 1;
+		removeButton = new SelectionButton(EncFSCommand.REMOVE_COMMAND);
+		removeButton.addActionListener(controller);				
+		removeButton.setEnabled(false);
+		contentPane.add(removeButton,gbc);	
 		
 		this.pack();
 		setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
-		this.addComponentListener(controller);		
+		this.addComponentListener(controller);	
+		model.addTableModelListener(this);
 	}
 
 
 	public JScrollPane setupScrollPane(JTable volumeTable)
 	{
-		JScrollPane pane = new JScrollPane(volumeTable);
+		JScrollPane pane = new JScrollPane(volumeTable, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 		pane.setPreferredSize(new Dimension(400,200));
 		return pane;
 	}
@@ -96,7 +112,7 @@ public class EncFSGUI extends JFrame implements ListSelectionListener{
 		{
 			setActionCommand(command + "_" + store);
 		}
-	}
+	}	
 	
 
 	public JButton createNewButton()
@@ -110,12 +126,20 @@ public class EncFSGUI extends JFrame implements ListSelectionListener{
 	@Override
 	public void valueChanged(ListSelectionEvent e) {
 		// TODO Auto-generated method stub
-		int crow = volumeTable.getSelectedRow() ;	
-		System.out.println("The selected Row is number " + crow );
+		updateButtons();
+	}
+	
+	/**
+	 * Update the buttons activity.
+	 */
+	public void updateButtons()
+	{
+		int crow = volumeTable.getSelectedRow() ;			
 		if(crow > -1)
 		{
-			String storeName = (String)model.getStoreNameAt(crow);
-			System.out.println("The store name is: " + storeName);
+			//Enable unmount and disable mount for active (and vice versa)
+			removeButton.setEnabled(true);
+			String storeName = (String)model.getStoreNameAt(crow);			
 			if(model.isActive(storeName))
 			{
 				mountButton.setEnabled(false);
@@ -126,7 +150,7 @@ public class EncFSGUI extends JFrame implements ListSelectionListener{
 				mountButton.setEnabled(true);
 				closeButton.setEnabled(false);
 			}
-			
+			//Activate the pw add button if no pw is set.
 			if(model.isPWSet(storeName))
 			{
 				pwButton.setEnabled(false);
@@ -139,6 +163,16 @@ public class EncFSGUI extends JFrame implements ListSelectionListener{
 			closeButton.setActiveStore(storeName);
 			pwButton.setActiveStore(storeName);
 		}
+		else
+		{
+			removeButton.setEnabled(false);
+		}
+	}
 
+
+	@Override
+	public void tableChanged(TableModelEvent e) {
+		// TODO Auto-generated method stub
+		updateButtons();
 	}
 }

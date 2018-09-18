@@ -5,9 +5,13 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 
+import java.security.InvalidKeyException;
+import java.util.concurrent.TimeUnit;
+
 import javax.swing.JOptionPane;
 
 import unilu.encFS.exceptions.NonEmptyFolderException;
+import unilu.encFS.exceptions.NotMountableException;
 
 public class CallEncFS {		
 
@@ -55,11 +59,20 @@ public class CallEncFS {
 	{
 		//This function assumes, that the encFS process is started, but nothing is yet read from the process (as it could otherwise block.		
 		BufferedReader br = new BufferedReader(new InputStreamReader(encFSProcess.getInputStream()));
+		try{
+			//encFS takes some time to actually make the buffer readable. So we have to wait for a bit....
+			encFSProcess.waitFor(1, TimeUnit.SECONDS);
+		}
+		catch(InterruptedException e)
+		{
+			e.printStackTrace(System.err);
+		}
 		if(br.ready())
 		{
 			String currentLine = br.readLine();
+			System.err.println(currentLine);
 			if(currentLine.startsWith("Creating"))
-			{
+			{				
 				return NEWMOUNT;
 			}
 			else
@@ -73,7 +86,8 @@ public class CallEncFS {
 		}
 	}
 	
-	public static void openExistingMount(Process encFSProcess, String password) throws IOException, InterruptedException
+	
+	public static void openExistingMount(Process encFSProcess, String password) throws NotMountableException,InvalidKeyException, IOException, InterruptedException
 	{
 		BufferedReader br = new BufferedReader(new InputStreamReader(encFSProcess.getInputStream()));
 		OutputStreamWriter osw = new OutputStreamWriter(encFSProcess.getOutputStream());
@@ -85,11 +99,20 @@ public class CallEncFS {
 		osw.write(password);				
 		osw.write("\n");
 		osw.flush();	
+		//If it is closed during flush, this does not matter.
 		encFSProcess.waitFor();
-		if(br.ready()) //This indicates an issue, as it normall exits without issue.			
+		if(br.ready()) //This indicates an issue, as it normal exits without issue.			
 		{
 			temp = br.readLine();
-			System.out.println(temp);
+			if(temp.startsWith("Error decoding volume key"))
+			{
+				throw new InvalidKeyException("The entered Key is invalid");
+			}
+			else
+			{
+				throw new NotMountableException(temp);
+			}
+
 		}
 	}
 	

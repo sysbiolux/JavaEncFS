@@ -7,4 +7,5 @@ public class EncFSCommand {
 	public static final String UNMOUNT_COMMAND = "Unmount";
 	public static final String PWADD_COMMAND = "Add Password";
 	public static final String OPENGUI_COMMAND = "Add Password";
+	public static final String REMOVE_COMMAND = "Remove";
 }
