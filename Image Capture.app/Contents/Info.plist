@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>BuildMachineOSBuild</key>
+	<string>16B2657</string>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>English</string>
+	<key>CFBundleDisplayName</key>
+	<string>Image Capture</string>
+	<key>CFBundleExecutable</key>
+	<string>Image Capture</string>
+	<key>CFBundleHelpBookFolder</key>
+	<string>ImageCapture.help</string>
+	<key>CFBundleHelpBookName</key>
+	<string>com.apple.ImageCapture.help</string>
+	<key>CFBundleIconFile</key>
+	<string>ImageCapture</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.apple.Image_Capture</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>Image Capture</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>7.0</string>
+	<key>CFBundleSignature</key>
+	<string>????</string>
+	<key>CFBundleSupportedPlatforms</key>
+	<array>
+		<string>MacOSX</string>
+	</array>
+	<key>CFBundleVersion</key>
+	<string>1106</string>
+	<key>DTCompiler</key>
+	<string>com.apple.compilers.llvm.clang.1_0</string>
+	<key>DTPlatformBuild</key>
+	<string>9L173x</string>
+	<key>DTPlatformVersion</key>
+	<string>GM</string>
+	<key>DTSDKBuild</key>
+	<string>17A317</string>
+	<key>DTSDKName</key>
+	<string>macosx10.13internal</string>
+	<key>DTXcode</key>
+	<string>0900</string>
+	<key>DTXcodeBuild</key>
+	<string>9L173x</string>
+	<key>LSApplicationCategoryType</key>
+	<string>public.app-category.utilities</string>
+	<key>LSHasLocalizedDisplayName</key>
+	<false/>
+	<key>LSMinimumSystemVersion</key>
+	<string>10.10.0</string>
+	<key>NSHumanReadableCopyright</key>
+	<string>Copyright © 2000-2017 Apple Inc.
+All rights reserved.</string>
+	<key>NSMainNibFile</key>
+	<string>MainMenu</string>
+	<key>NSPrincipalClass</key>
+	<string>ICApplication</string>
+	<key>NSSupportsAutomaticGraphicsSwitching</key>
+	<true/>
+	<key>NSSupportsSuddenTermination</key>
+	<true/>
+	<key>com.apple.PreferenceSync.ExcludeAllSyncKeys</key>
+	<false/>
+</dict>
+</plist>
