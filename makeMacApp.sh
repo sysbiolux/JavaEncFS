@@ -10,4 +10,4 @@ cp /System/Library/Frameworks/JavaVM.framework/Versions/Current/Resources/MacOS/
 cp src/main/images/JavaEncFS.icns JavaEncFS.app/Contents/Ressources
 echo APPL???? >> JavaEncFS.app/Contents/PkgInfo
 cp target/encFS-1.0-jar-with-dependencies.jar JavaEncFS.app/Contents/Ressources/Java/JavaEncFS.jar
-/Developer/Tools/SetFile -a B JavaEncFS.app.app
+SetFile -a B JavaEncFS.app.app
