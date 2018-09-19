@@ -34,6 +34,11 @@ public class encFS {
 	}
 	public static void createAndShowGUI()
 	{
+		for(String prop : System.getenv().keySet())
+		{
+			System.out.println(prop + ": "+ System.getenv().get(prop));
+		}		
+
 		// TODO Auto-generated method stub
 		System.out.println("Hello World");
 		EncFSModel mod = new EncFSModel();
