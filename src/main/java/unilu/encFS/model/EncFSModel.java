@@ -172,7 +172,31 @@ public class EncFSModel extends DefaultTableModel{
 	}
 
 
-
+	public String getDecryptedFolder(Object store)
+	{
+		EncFSProperties props = storages.get(store);
+		if(props == null)
+		{
+			return "";
+		}
+		else
+		{
+			return props.DecryptedFolder;
+		}
+	}
+	
+	public String getEncryptedFolder(Object store)
+	{
+		EncFSProperties props = storages.get(store);
+		if(props == null)
+		{
+			return "";
+		}
+		else
+		{
+			return props.EncryptedFolder;
+		}
+	}
 	private String getMasterKey()
 	{
 		String masterKey = key.getKey();
@@ -680,8 +704,7 @@ public class EncFSModel extends DefaultTableModel{
 		case COL_NAME:
 		{
 			String name = (String)tabModel.getValueAt(row, column);
-			EncFSProperties props = storages.get(name);
-			return name + "(" + props.DecryptedFolder + ")";
+			return name;
 		}
 		case COL_ACTIVE:
 		{

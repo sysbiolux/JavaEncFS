@@ -1,4 +1,5 @@
 package unilu.encFS;
+import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
@@ -6,6 +7,7 @@ import java.awt.GridBagLayout;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
@@ -13,6 +15,7 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
+import javax.swing.table.DefaultTableCellRenderer;
 
 import unilu.encFS.commands.EncFSCommand;
 import unilu.encFS.commands.EncFSController;
@@ -31,7 +34,7 @@ public class EncFSGUI extends JFrame implements ListSelectionListener, TableMode
 	{
 		this.model = model;
 		this.controller = controller;
-		volumeTable = new JTable(model);		
+		volumeTable = new JTable(model);				
 		volumeTable.getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);		
 		volumeTable.setRowSelectionAllowed(true);
 		volumeTable.setColumnSelectionAllowed(false);
@@ -41,7 +44,8 @@ public class EncFSGUI extends JFrame implements ListSelectionListener, TableMode
 		volumeTable.getColumnModel().getColumn(2).setMinWidth(80);
 		volumeTable.getColumnModel().getColumn(1).setMaxWidth(80);
 		volumeTable.getColumnModel().getColumn(2).setMaxWidth(80);
-		volumeTable.setMinimumSize(new Dimension(360, 80));		
+		volumeTable.setMinimumSize(new Dimension(360, 80));
+		volumeTable.getColumnModel().getColumn(0).setCellRenderer(new StorageCellRenderer(model));
 		model.addTableModelListener(volumeTable);
 		Container contentPane = this.getContentPane();
 		this.getContentPane().setLayout(new GridBagLayout());
@@ -175,4 +179,27 @@ public class EncFSGUI extends JFrame implements ListSelectionListener, TableMode
 		// TODO Auto-generated method stub
 		updateButtons();
 	}
+	
+	class StorageCellRenderer extends DefaultTableCellRenderer {
+		
+		EncFSModel model;
+		public StorageCellRenderer(EncFSModel model) {
+			// TODO Auto-generated constructor stub
+			super();
+			this.model = model;
+			
+		}
+	    public Component getTableCellRendererComponent(
+	                        JTable table, Object value,
+	                        boolean isSelected, boolean hasFocus,
+	                        int row, int column) {
+	        JLabel c = (JLabel)super.getTableCellRendererComponent( table, value, isSelected, hasFocus, row, column) ;
+	        String storeName = model.getStoreNameAt(row);
+	        String EncryptedFolder = model.getEncryptedFolder(storeName);
+	        String DecryptedFolder = model.getEncryptedFolder(storeName);
+	        c.setToolTipText("<html>Name: " + storeName + "<br>Encrypted Folder: " + EncryptedFolder + "<br>Decrypted Folder: " + DecryptedFolder + "</html>");
+	        return c;
+	    }
+	}
+
 }
