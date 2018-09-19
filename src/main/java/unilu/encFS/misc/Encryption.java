@@ -46,7 +46,10 @@ public class Encryption {
 	        outputStream.write(encryptedText);
 
 	        // properly encode the complete ciphertext
-	        return DatatypeConverter.printBase64Binary(outputStream.toByteArray());
+	        byte[] temp = outputStream.toByteArray();
+	        String temp2 = DatatypeConverter.printBase64Binary(temp);
+	        return temp2;
+	        
 	    } catch (Exception e) {
 	        e.printStackTrace();
 	    }
@@ -57,7 +60,7 @@ public class Encryption {
 	public static String decrypt(String encryptedText, String key) throws NoSuchAlgorithmException, BadPaddingException, IllegalBlockSizeException, InvalidKeyException, NoSuchPaddingException 
 	{		
 	    try {
-	        byte[] ciphertext = DatatypeConverter.parseBase64Binary(encryptedText);
+	        byte[] ciphertext = DatatypeConverter.parseBase64Binary(encryptedText);	       
 	        if (ciphertext.length < 48) {
 	            return null;
 	        }
