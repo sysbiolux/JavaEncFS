@@ -33,14 +33,9 @@ public class encFS {
 	    });
 	}
 	public static void createAndShowGUI()
-	{
-		for(String prop : System.getenv().keySet())
-		{
-			System.out.println(prop + ": "+ System.getenv().get(prop));
-		}		
-
+	{		
 		// TODO Auto-generated method stub
-		System.out.println("Hello World");
+		System.out.println("Starting encFS Manager");
 		EncFSModel mod = new EncFSModel();
 		EncFSController controller = new EncFSController(mod);
 		EncFSModelRefresher refresher = new EncFSModelRefresher(mod);
