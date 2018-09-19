@@ -28,8 +28,7 @@
 \definecolor{dkgreen}{rgb}{0,0.6,0}
 \definecolor{gray}{rgb}{0.5,0.5,0.5}
 \definecolor{mauve}{rgb}{0.58,0,0.82}
-\usepackage[final,colorlinks=false,pdfborder={0 0 0},bookmarksopen=true,bookmarksnumbered=true]{hyperref}
-\onehalfspacing
+\usepackage[final,colorlinks=true,pdfborder={0 0 0},bookmarksopen=true,bookmarksnumbered=true]{hyperref}
 
 \author[1,2]{Thomas Pfau}
 
@@ -79,15 +78,15 @@ $^{a}$Life Science Research Unit, University of Luxembourg, Campus Belval, Biote
 \end{center} 
 \end{titlepage}
 
-%\chapter{The IDARE Cytoscape app}
-\begin{abstract}
+%\subsection{The IDARE Cytoscape app}
+\chapter{Installing and using encfs}
+
 Encrypting files containing personal data has become paramount with the introduction of the GDPR.
 An simple tool to achieve this is the open Source software encfs, which generates an encrypted file system, and makes it available as an additional Mount point or volume.
 While it is easy to use on the command line, a graphical user interface might be preferred by many. 
 For windows a GUI exists, in the form of \href{https://github.com/jetwhiz/encfs4win}{encFS4Win}.
 However, for Linux and mac, the available tools are not reliable.
 Here are instructions on how to use encFS on the different operating systems. How to install it etc. 
-\end{abstract}
 
 
 \section{Windows}
@@ -104,7 +103,7 @@ While you can have multiple mounts pointing to the same drive letter, they canno
 \section{Unix Systems}
 
 \subsection{Installation}
-\paragraph{Mac}
+\subsubsection{Mac}
 These instructions are for High Sierra (macOS 10.13), but they should work as well for other macOS versions.
 You will need to install the encfs tool and java before you can start. To do so, we will install Homebrew (if it is not yet installed), which makes the installation much easier
 Run the following command in a terminal (LaunchPad \textrightarrow Other/Utilities \textrightarrow Terminal):
@@ -126,7 +125,7 @@ brew install encfs
 
 
 
-\paragraph{Linux}
+\subsubsection{Linux}
 We assume you are on an apt-based system (our example is for ubuntu 16.04). If you are using a different package manager, you will have to adapt the instructions accordingly.
 \subsection{Installation}
 You will need to install encfs and java.
@@ -148,7 +147,7 @@ You can create new encrypted volumes and mount/unmount volumes  using this inter
 Closing the Interface does not close the tool! IT will stay open as tray icon, and you can reopen the Interface by right-clicking on the tray icon and select ``Open Manager''.
 Only if you exit from the tray icon, the tool will shut down.
 If you do so, all your mounts will be unmounted (disconnected), and you will need to reopen them, if you want to use them again.
-\paragraph{Password storage}
+\subsection{Password storage}
 The tool offers a password storage, so that you don't need to remember all passwords for the different storages. If using this feature, please use a strong master password to protect them.
 The first time you cick ``Add Password'', you will be asked to set up a master password. The master password cannot be changed (at the moment). 
 If you want to access a volume for which you have saved a password, you will be asked to provide the master key to unlock the stored password. 
