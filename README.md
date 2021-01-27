@@ -27,7 +27,9 @@ While you can have multiple mounts pointing to the same drive letter, they canno
 These instructions are for High Sierra (macOS 10.13), but they should work as well for other macOS versions.
 You will need to install the encfs tool and java before you can start. To do so, we will install Homebrew (if it is not yet installed), which makes the installation much easier
 Run the following command in a terminal (LaunchPad -> Other/Utilities -> Terminal):
+
 `ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"`
+
 First, we will install java using homebrew:
 
 `brew cask install java`
